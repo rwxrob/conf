@@ -25,7 +25,7 @@ func init() {
 var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
-	Summary:   `manage local YAML/JSON configuation`,
+	Summary:   `manage local YAML/JSON configuration`,
 	Version:   `v0.5.0`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
