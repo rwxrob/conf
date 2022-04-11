@@ -26,7 +26,7 @@ var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
 	Summary:   `manage local YAML/JSON configuation`,
-	Version:   `v0.5.0`,
+	Version:   `v0.5.1`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
 	Commands:  []*Z.Cmd{help.Cmd, data, _init, edit, _file, query},
@@ -138,7 +138,7 @@ var query = &Z.Cmd{
 	Name:     `query`,
 	Summary:  `query conf data using jq/yq style`,
 	Usage:    `<dotted>`,
-	Aliases:  []string{"q"},
+	Aliases:  []string{"q", "get"},
 	Commands: []*Z.Cmd{help.Cmd},
 	Call: func(x *Z.Cmd, args ...string) error {
 		if len(args) == 0 {
