@@ -26,7 +26,7 @@ var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
 	Summary:   `manage local YAML/JSON configuation`,
-	Version:   `v0.5.3`,
+	Version:   `v0.5.4`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
 	Commands:  []*Z.Cmd{help.Cmd, data, _init, edit, _file, query},
@@ -68,7 +68,7 @@ var _init = &Z.Cmd{
 	Aliases:  []string{"i"},
 	Summary:  `(re)initializes current configuration`,
 	Commands: []*Z.Cmd{help.Cmd},
-	ReqConf:  true, // but fulfills at init() above
+	UseConf:  true, // but fulfills at init() above
 	Call: func(x *Z.Cmd, _ ...string) error {
 		if term.IsInteractive() {
 			r := term.Prompt(`Really initialize %v? (y/N) `, conf.DirPath())
@@ -107,7 +107,11 @@ var data = &Z.Cmd{
 
 	Commands: []*Z.Cmd{help.Cmd},
 	Call: func(x *Z.Cmd, _ ...string) error {
-		fmt.Print(conf.Data())
+		data, err := conf.Data()
+		if err != nil {
+			return err
+		}
+		fmt.Print(data)
 		return nil
 	},
 }
@@ -140,11 +144,8 @@ var query = &Z.Cmd{
 	Usage:    `<dotted>`,
 	Aliases:  []string{"q", "get"},
 	Commands: []*Z.Cmd{help.Cmd},
+	NumArgs:  1,
 	Call: func(x *Z.Cmd, args ...string) error {
-		if len(args) == 0 {
-			return x.UsageError()
-		}
-		conf.QueryPrint(args[0])
-		return nil
+		return conf.QueryPrint(args[0])
 	},
 }

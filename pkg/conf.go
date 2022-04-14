@@ -19,10 +19,8 @@ import (
 	"bytes"
 	"fmt"
 	_fs "io/fs"
-	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/rogpeppe/go-internal/lockedfile"
 	"github.com/rwxrob/fs"
@@ -87,18 +85,24 @@ func (c C) Init() error {
 // Data returns a string buffer containing all of the configuration file
 // data for the given configuration. An empty string is returned and an
 // error logged if any error occurs.
-func (c C) Data() string {
+func (c C) Data() (string, error) {
 	buf, err := os.ReadFile(c.Path())
 	if err != nil {
-		log.Println(err)
-		return ""
+		return "", err
 	}
-	return string(buf)
+	return string(buf), nil
 }
 
 // Print prints the Data to standard output with an additional line
 // return.
-func (c C) Print() { fmt.Println(c.Data()) }
+func (c C) Print() error {
+	data, err := c.Data()
+	if err != nil {
+		return err
+	}
+	fmt.Println(data)
+	return nil
+}
 
 // Edit opens the given configuration the local editor. See fs/file.Edit
 // for more.
@@ -147,17 +151,17 @@ func (c C) OverWrite(newconf any) error {
 // Query returns a YAML string matching the given yq query for the given
 // configuration and strips any initial or trailing white space (usually
 // just the single new line at then added by yq). Currently, this
-// function is implemented by calling rwxrob/yq. Will log and return
-// empty string if error. Note that the yqlib usually adds a line to the
-// end.
-func (c C) Query(q string) string {
-	results, err := yq.EvaluateToString(q, c.Path())
-	if err != nil {
-		log.Print(err)
-		return ""
-	}
-	return strings.TrimSpace(results)
+// function is implemented by calling rwxrob/yq.
+func (c C) Query(q string) (string, error) {
+	return yq.EvaluateToString(q, c.Path())
 }
 
 // QueryPrint prints the output of Query.
-func (c C) QueryPrint(q string) { fmt.Print(c.Query(q)) }
+func (c C) QueryPrint(q string) error {
+	res, err := c.Query(q)
+	if err != nil {
+		return err
+	}
+	fmt.Print(res)
+	return nil
+}
