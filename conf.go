@@ -1,151 +1,167 @@
+/*
+Package conf helps generically manage configuration data in YAML files
+(and, by extension JSON, which is a YAML subset) using the
+gopkg.in/yaml.v3 package (v2 is not compatible with encoding/json
+creating unexpected marshaling errors).
+
+The package provides the high-level functions called by the Bonzai™
+branch command of the same name allowing it to be consistently composed into any to any other Bonzai branch. However, composing into the root is generally preferred to avoid configuration name space conflicts and centralize all configuration data for a single Bonzai tree monolith for easy transport.
+
+Rather than provide functions for changing individual values, this
+package assumes editing of the YAML files directly and provider helpers
+for system-wide safe concurrent writes and queries using the convention
+yq/jq syntax. Default directory and file permissions are purposefully
+more restrictive than the Go default (0700/0600).
+*/
 package conf
 
 import (
+	"bytes"
 	"fmt"
+	_fs "io/fs"
 	"os"
+	"path/filepath"
 
-	Z "github.com/rwxrob/bonzai/z"
-	_conf "github.com/rwxrob/conf/pkg"
-	"github.com/rwxrob/help"
-	"github.com/rwxrob/term"
+	"github.com/rogpeppe/go-internal/lockedfile"
+	"github.com/rwxrob/fs"
+	"github.com/rwxrob/fs/dir"
+	"github.com/rwxrob/fs/file"
+	yq "github.com/rwxrob/yq/pkg"
+	"gopkg.in/yaml.v3"
 )
 
-var conf _conf.C
+type C struct {
+	Id   string // usually application name
+	Dir  string // usually os.UserConfigDir
+	File string // usually config.yaml
+}
 
-func init() {
-	dir, _ := os.UserConfigDir()
-	conf = _conf.C{
-		Id:   Z.ExeName,
-		Dir:  dir,
-		File: `config.yaml`,
+// DirPath is the Dir and Id joined.
+func (c C) DirPath() string { return filepath.Join(c.Dir, c.Id) }
+
+// Path returns the combined Dir and File.
+func (c C) Path() string { return filepath.Join(c.Dir, c.Id, c.File) }
+
+// Init initializes the configuration directory (Dir) for the current
+// user and given application name (Id) using the standard
+// os.UserConfigDir location.  The directory is completely removed and
+// new configuration file(s) are created.
+//
+// Consider placing a confirmation prompt before calling this function
+// when term.IsInteractive is true. Since Init uses fs/{dir,file}.Create
+// you can set the file.DefaultPerms and dir.DefaultPerms if you prefer
+// a different default for your permissions.
+//
+// Permissions in the fs package are restrictive (0700/0600) by default
+// to  allow tokens to be stored within configuration files (as other
+// applications are known to do). Still, saving of critical secrets is
+// not encouraged within any flat configuration file. But anything that
+// a web browser would need to cache in order to operate is appropriate
+// (cookies, session tokens, etc.).
+func (c C) Init() error {
+	d := c.DirPath()
+
+	// safety checks before blowing things away
+	if d == "" {
+		return fmt.Errorf("could not resolve conf path for %q", c.Id)
 	}
-	Z.Conf = conf
-}
+	if len(c.Id) == 0 && len(c.Dir) == 0 {
+		return fmt.Errorf("empty directory id")
+	}
 
-var Cmd = &Z.Cmd{
-
-	Name:      `conf`,
-	Summary:   `manage conf in {{execonfdir "config.yaml"}}`,
-	Version:   `v0.5.6`,
-	Copyright: `Copyright 2021 Robert S Muhlestein`,
-	License:   `Apache-2.0`,
-	Commands:  []*Z.Cmd{help.Cmd, data, _init, edit, _file, query},
-	Description: `
-		The **{{.Name}}** Bonzai branch is for safely managing any
-		configuration as single, local YAML/JSON using industry standards
-		for local configuration and persistence to a file using system-wide
-		semaphores for safety. Use it to add a **{{.Name}}** subcommand to
-		any other Bonzai command, or to your root Bonzai tree. Either way,
-		the same single configuration file is used, only the path within the
-		configuration data is affected by the position of the **{{.Name}}**
-		command.
-
-		Querying configuration data can be easily accomplished with the
-		**query** command that uses the same selection syntax as the **yq**
-		Go utility (the same **yqlib** is used).
-
-		All changes to configuration values are done via the **edit** command
-		since configurations may be complex and deeply nested in some cases
-		and promoting the automatic changing of configuration values opens
-		the possibility that one buggy composed command might overwrite one
-		or all the configurations for everything everything else composed
-		into the binary.
-
-		CAUTION: Take particular note that all commands composed into
-		a single binary, no matter where in the tree, will use the same
-		local config file even though the position within the file will be
-		qualified by the tree location. Therefore, any composite command can
-		read the configurations of any other composite command within the
-		same binary. This is by design, but all commands composed together
-		should always be vetted for safe practices.
-
-		[The **vars** Bonzai branch is recommended when wanting to persist
-		performant local data between command executions.]`,
-}
-
-var _init = &Z.Cmd{
-	Name:     `init`,
-	Aliases:  []string{"i"},
-	Summary:  `(re)initializes current configuration`,
-	Commands: []*Z.Cmd{help.Cmd},
-	UseConf:  true, // but fulfills at init() above
-	Call: func(x *Z.Cmd, _ ...string) error {
-		if term.IsInteractive() {
-			r := term.Prompt(`Really initialize %v? (y/N) `, conf.DirPath())
-			if r != "y" {
-				return nil
-			}
-		}
-		return Z.Conf.Init()
-	},
-}
-
-var _file = &Z.Cmd{
-	Name:     `file`,
-	Aliases:  []string{"f"},
-	Summary:  `outputs path to file ({{execonfdir "config.yaml" }})`,
-	Commands: []*Z.Cmd{help.Cmd},
-	Call: func(x *Z.Cmd, _ ...string) error {
-		fmt.Println(conf.Path())
-		return nil
-	},
-}
-
-var data = &Z.Cmd{
-	Name:    `data`,
-	Aliases: []string{"d"},
-	Summary: `outputs conf data ({{execonfdir "config.yaml" }})`,
-
-	Description: `
-			The **{{.Name}}** command prints the entire, unobfuscated contents
-			of the YAML configuration file without warning.
-
-			WARNING: Since configuration data regularly includes secrets
-			(tokens, keys, etc.) be aware that anyone able to view your screen
-			could compromise your security when using this command in front of
-			them (presentations, streaming, etc.).`,
-
-	Commands: []*Z.Cmd{help.Cmd},
-	Call: func(x *Z.Cmd, _ ...string) error {
-		data, err := conf.Data()
-		if err != nil {
+	if fs.Exists(d) {
+		if err := os.RemoveAll(d); err != nil {
 			return err
 		}
-		fmt.Print(data)
-		return nil
-	},
+	}
+
+	if err := dir.Create(d); err != nil {
+		return err
+	}
+
+	return file.Touch(c.Path())
 }
 
-var edit = &Z.Cmd{
-	Name:     `edit`,
-	Summary:  `edit conf file ({{execonfdir "config.yaml"}}) `,
-	Aliases:  []string{"e"},
-	Commands: []*Z.Cmd{help.Cmd},
-
-	Description: `
-		The **{{.Name}}** command will the configuration file for editing in
-		the currently configured editor (in order or priority):
-
-		* $VISUAL
-		* $EDITOR
-		* vi
-		* vim
-		* nano
-
-		The edit command hands over control of the currently running process
-		to the editor. `,
-
-	Call: func(x *Z.Cmd, _ ...string) error { return conf.Edit() },
+// Data returns a string buffer containing all of the configuration file
+// data for the given configuration. An empty string is returned and an
+// error logged if any error occurs.
+func (c C) Data() (string, error) {
+	buf, err := os.ReadFile(c.Path())
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
 }
 
-var query = &Z.Cmd{
-	Name:     `query`,
-	Summary:  `query conf data using jq/yq style`,
-	Usage:    `<dotted>`,
-	Aliases:  []string{"q", "get"},
-	Commands: []*Z.Cmd{help.Cmd},
-	NumArgs:  1,
-	Call: func(x *Z.Cmd, args ...string) error {
-		return conf.QueryPrint(args[0])
-	},
+// Print prints the Data to standard output with an additional line
+// return.
+func (c C) Print() error {
+	data, err := c.Data()
+	if err != nil {
+		return err
+	}
+	fmt.Println(data)
+	return nil
+}
+
+// Edit opens the given configuration the local editor. See fs/file.Edit
+// for more.
+func (c C) Edit() error {
+	if err := c.mkdir(); err != nil {
+		return err
+	}
+	path := c.Path()
+	if path == "" {
+		return fmt.Errorf("unable to locate conf for %q", c.Id)
+	}
+	return file.Edit(path)
+}
+
+func (c C) mkdir() error {
+	d := c.DirPath()
+	if d == "" {
+		return fmt.Errorf("failed to find conf for %q", c.Id)
+	}
+	if fs.NotExists(d) {
+		if err := dir.Create(d); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// OverWrite marshals any Go type and overwrites the configuration File in
+// a way that is safe for all callers of OverWrite in this current system
+// for any operating system using go-internal/lockedfile (taken from the
+// to internal project itself,
+// https://github.com/golang/go/issues/33974) but applying the
+// file.DefaultPerms instead of the 0666 Go default.
+func (c C) OverWrite(newconf any) error {
+	buf, err := yaml.Marshal(newconf)
+	if err != nil {
+		return err
+	}
+	if err := c.mkdir(); err != nil {
+		return err
+	}
+	return lockedfile.Write(c.Path(),
+		bytes.NewReader(buf), _fs.FileMode(file.DefaultPerms))
+}
+
+// Query returns a YAML string matching the given yq query for the given
+// configuration and strips any initial or trailing white space (usually
+// just the single new line at then added by yq). Currently, this
+// function is implemented by calling rwxrob/yq.
+func (c C) Query(q string) (string, error) {
+	return yq.EvaluateToString(q, c.Path())
+}
+
+// QueryPrint prints the output of Query.
+func (c C) QueryPrint(q string) error {
+	res, err := c.Query(q)
+	if err != nil {
+		return err
+	}
+	fmt.Print(res)
+	return nil
 }

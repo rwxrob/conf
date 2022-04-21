@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	conf "github.com/rwxrob/conf/pkg"
+	"github.com/rwxrob/conf"
 	"github.com/rwxrob/fs/dir"
 )
 
