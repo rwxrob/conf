@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/rogpeppe/go-internal v1.8.1
-	github.com/rwxrob/bonzai v0.10.1
-	github.com/rwxrob/fs v0.5.0
-	github.com/rwxrob/help v0.3.6
+	github.com/rwxrob/bonzai v0.11.1
+	github.com/rwxrob/fs v0.5.1
+	github.com/rwxrob/help v0.3.8
 	github.com/rwxrob/term v0.2.6
 	github.com/rwxrob/yq v0.2.4
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
@@ -30,7 +30,7 @@ require (
 	github.com/timtadh/data-structures v0.5.3 // indirect
 	github.com/timtadh/lexmachine v0.2.2 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
-	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/net v0.0.0-20220420153159-1850ba15e1be // indirect
 	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
