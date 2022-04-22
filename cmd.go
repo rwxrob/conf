@@ -25,7 +25,7 @@ var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
 	Summary:   `manage conf in {{execonfdir "config.yaml"}}`,
-	Version:   `v0.6.2`,
+	Version:   `v0.6.3`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
 	Commands:  []*Z.Cmd{help.Cmd, data, _init, edit, _file, query},
