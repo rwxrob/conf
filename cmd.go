@@ -25,10 +25,10 @@ var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
 	Summary:   `manage conf in {{execonfdir "config.yaml"}}`,
-	Version:   `v0.6.3`,
+	Version:   `v0.7.0`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
-	Commands:  []*Z.Cmd{help.Cmd, data, _init, edit, _file, query},
+	Commands:  []*Z.Cmd{help.Cmd, data, initCmd, edit, fileCmd, query},
 	Description: `
 		The **{{.Name}}** Bonzai branch is for safely managing any
 		configuration as single, local YAML/JSON using industry standards
@@ -62,7 +62,7 @@ var Cmd = &Z.Cmd{
 		performant local data between command executions.]`,
 }
 
-var _init = &Z.Cmd{
+var initCmd = &Z.Cmd{
 	Name:     `init`,
 	Aliases:  []string{"i"},
 	Summary:  `(re)initializes current configuration`,
@@ -79,7 +79,7 @@ var _init = &Z.Cmd{
 	},
 }
 
-var _file = &Z.Cmd{
+var fileCmd = &Z.Cmd{
 	Name:     `file`,
 	Aliases:  []string{"f"},
 	Summary:  `outputs path to file ({{execonfdir "config.yaml" }})`,

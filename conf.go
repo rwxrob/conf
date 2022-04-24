@@ -82,6 +82,19 @@ func (c C) Init() error {
 	return file.Touch(c.Path())
 }
 
+// Exists returns true if a configuration file exists at Path.
+func (c C) Exists() bool {
+	return file.Exists(c.Path())
+}
+
+// SoftInit calls Init if not Exists.
+func (c C) SoftInit() error {
+	if !c.Exists() {
+		return c.Init()
+	}
+	return nil
+}
+
 // Data returns a string buffer containing all of the configuration file
 // data for the given configuration. An empty string is returned and an
 // error logged if any error occurs.
