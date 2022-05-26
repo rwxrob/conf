@@ -26,7 +26,7 @@ import (
 	"github.com/rwxrob/fs"
 	"github.com/rwxrob/fs/dir"
 	"github.com/rwxrob/fs/file"
-	yq "github.com/rwxrob/yq/pkg"
+	yq "github.com/rwxrob/yq"
 	"gopkg.in/yaml.v3"
 )
 

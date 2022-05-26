@@ -2,7 +2,7 @@
 
 ![Go
 Version](https://img.shields.io/github/go-mod/go-version/rwxrob/conf)
-[![GoDoc](https://godoc.org/github.com/rwxrob/conf?status.svg)](https://godoc.org/github.com/rwxrob/conf)
+Coding simple !go function to grab current !k8s context[![GoDoc](https://godoc.org/github.com/rwxrob/conf?status.svg)](https://godoc.org/github.com/rwxrob/conf)
 [![License](https://img.shields.io/badge/license-Apache2-brightgreen.svg)](LICENSE)
 
 This `conf` Bonzai branch is for safely managing any configuration as
@@ -28,7 +28,7 @@ with shell scripts perhaps) or composed into a Bonzai command tree.
 Standalone
 
 ```
-go install github.com/rwxrob/conf/conf@latest
+go install github.com/rwxrob/conf/cmd/conf@latest
 ```
 
 Composed
@@ -37,7 +37,7 @@ Composed
 package z
 
 import (
-	Z "github.com/rwxrob/bonzai"
+	Z "github.com/rwxrob/bonzai/z"
 	"github.com/rwxrob/conf"
 )
 
