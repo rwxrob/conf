@@ -25,10 +25,10 @@ var Cmd = &Z.Cmd{
 
 	Name:      `conf`,
 	Summary:   `manage conf in {{execonfdir "config.yaml"}}`,
-	Version:   `v0.8.0`,
+	Version:   `v0.8.1`,
 	Copyright: `Copyright 2021 Robert S Muhlestein`,
 	License:   `Apache-2.0`,
-	Commands:  []*Z.Cmd{help.Cmd, data, initCmd, edit, fileCmd, query},
+	Commands:  []*Z.Cmd{help.Cmd, dataCmd, initCmd, editCmd, fileCmd, queryCmd},
 	Description: `
 		The **{{.Name}}** Bonzai branch is for safely managing any
 		configuration as single, local YAML/JSON using industry standards
@@ -90,7 +90,7 @@ var fileCmd = &Z.Cmd{
 	},
 }
 
-var data = &Z.Cmd{
+var dataCmd = &Z.Cmd{
 	Name:    `data`,
 	Aliases: []string{"d"},
 	Summary: `outputs conf data ({{execonfdir "config.yaml" }})`,
@@ -115,7 +115,7 @@ var data = &Z.Cmd{
 	},
 }
 
-var edit = &Z.Cmd{
+var editCmd = &Z.Cmd{
 	Name:     `edit`,
 	Summary:  `edit conf file ({{execonfdir "config.yaml"}}) `,
 	Aliases:  []string{"e"},
@@ -137,7 +137,7 @@ var edit = &Z.Cmd{
 	Call: func(x *Z.Cmd, _ ...string) error { return conf.Edit() },
 }
 
-var query = &Z.Cmd{
+var queryCmd = &Z.Cmd{
 	Name:     `query`,
 	Summary:  `query conf data using jq/yq style`,
 	Usage:    `<dotted>`,
