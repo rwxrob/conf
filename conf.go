@@ -175,6 +175,6 @@ func (c C) QueryPrint(q string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Print(res)
+	fmt.Println(res)
 	return nil
 }
